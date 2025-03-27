@@ -1,0 +1,39 @@
+
+
+
+juju consume  cos.prometheus-receive-remote-write
+juju consume  cos.grafana-dashboards
+juju consume cos.loki-logging
+
+
+ 
+juju deploy telegraf --channel latest/stable --series=jammy
+juju deploy  grafana-agent  --channel latest/stable --series=jammy
+juju deploy nrpe --channel latest/stable --series=jammy
+
+
+
+//deploy openstack-exporter
+juju deploy openstack-exporter --channel latest/edge --base=ubuntu@22.04
+
+juju config openstack-exporter cache=true
+juju config openstack-exporter cache_ttl=6s
+juju exec -u vault/leader 'leader-get root-ca' > ca.crt
+juju config openstack-exporter ssl_ca="$(cat ca.crt)"
+
+
+
+juju integrate keystone openstack-exporter
+
+juju integrate grafana-agent openstack-exporter
+juju relate ceph-mon:cos-agent grafana-agent
+ 
+ 
+
+
+juju relate grafana-agent prometheus-receive-remote-write
+juju relate grafana-agent loki-logging
+juju relate grafana-agent grafana-dashboards
+
+
+juju integrate  telegraf:juju-info nova-compute:juju-info

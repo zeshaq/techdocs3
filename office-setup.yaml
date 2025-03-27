@@ -1,0 +1,42 @@
+MAAS Server:
+
+SSH:
+ssh maas01@103.108.63.116
+username: maas01
+password: ze
+
+Rustdesk: 372171496
+Password: asdf@1234
+
+Anydesk: 1377034520
+Password: asdf@1234
+
+
+MAAS Dashboard 103.108.63.116:5240
+Username: admin
+Password: ze
+
+Compute
+iLO: 192.168.10.110
+Username: Administrator 
+Password: NQFFV8MX
+
+Compute Machine subnet: 16.16.0.0/16
+
+
+
+
+client_public_key 
+oR3jFrKRzn6UfxC+G661G1gMndJDWfwp6CYmDAW9Vn4=
+
+ client_private_key 
+oFKDQCxbqQZ80J0Fw0zaJ4gS2sRtq8RaZnK3+/Ui6Fo=
+
+
+
+server_public_key 
+XiYL5RXrtCSKaPHCfuws7YzkboR8jVW7Od71U5819j4=
+
+
+server_private_key 
+8GZS4BVAH58Zf0AyCtAAdmetb5TvQsxRuK24IspdUng=

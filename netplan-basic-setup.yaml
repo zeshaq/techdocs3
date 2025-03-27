@@ -1,0 +1,21 @@
+network:
+    version: 2
+    renderer: networkd
+    ethernets:
+        eno1:
+            dhcp4: true
+        eno2:
+            dhcp4: false
+            addresses: [14.14.0.2/16]
+            nameservers:
+              addresses: [8.8.8.8]
+            routes:
+            - to: "default"
+              via: "12.12.0.1" 
+    version: 2
+
+
+
+
+sudo nano  /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+network: {config: disabled}

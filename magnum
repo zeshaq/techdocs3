@@ -1,0 +1,10 @@
+
+
+
+openstack coe cluster template create kubernetes-cluster-template \
+                     --image fedora-coreos-latest \
+                     --external-network ext_net \
+                     --dns-nameserver 8.8.8.8 \
+                     --master-flavor flavor1 \
+                     --flavor flavor1 \
+                     --coe kubernetes

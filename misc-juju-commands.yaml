@@ -1,0 +1,4 @@
+juju deploy ubuntu --constraints "instance-type=m2.small allocate-public-ip=True" --base ubuntu@22.04 --config use-default-secgroup=true
+
+
+juju deploy k8s --constraints "allocate-public-ip=True" --base ubuntu@22.04 --config use-default-secgroup=true

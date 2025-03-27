@@ -1,0 +1,34 @@
+series: jammy
+applications:
+  k8s:
+    charm: k8s
+    channel: latest/edge
+    num_units: 3
+    constraints: cpu-cores=2 mem=8G root-disk=32G
+    options:
+      bootstrap-node-taints: |-
+        node-role.kubernetes.io/control-plane:NoSchedule
+  k8s-worker:
+    charm: k8s-worker
+    channel: latest/edge
+    num_units: 3
+    constraints: cpu-cores=2 mem=8G root-disk=32G
+  easyrsa:
+    charm: easyrsa
+    channel: stable
+    num_units: 1
+    constraints: cpu-cores=1 mem=4G root-disk=16G
+  etcd:
+    charm: etcd
+    channel: stable
+    num_units: 3
+    constraints: cpu-cores=2 mem=8G root-disk=64G
+
+
+relations:
+
+  - [easyrsa:client, etcd:certificates]  
+  - [k8s:etcd, etcd:db]  
+  - [k8s:k8s-cluster, k8s-worker:cluster]
+  - [k8s:containerd, k8s-worker:containerd]
+  - [k8s:cos-worker-tokens, k8s-worker:cos-tokens]

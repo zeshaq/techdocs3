@@ -1,0 +1,101 @@
+juju deploy -n 3 microceph --channel latest/edge --to microceph-1.maas,microceph-2.maas,microceph-3.maas
+
+juju deploy microk8s  --channel 1.28/stable --series jammy -n 3 --to microk8s-.maas,microk8s-2.maas,microk8s-3.maas
+
+
+juju deploy microk8s  --channel 1.28/stable --series jammy -n 3 --to  3,1,2
+
+
+
+
+ juju run microceph/0 add-osd device-id=/dev/sdb,/dev/sdc
+ juju run microceph/1 add-osd device-id=/dev/sdb,/dev/sdc
+ juju run microceph/2 add-osd device-id=/dev/sdb,/dev/sdc
+
+juju ssh microceph/leader
+
+sudo microceph.ceph status
+
+
+sudo microk8s enable rook-ceph
+    sudo microk8s connect-external-ceph
+
+ alias kubectl='microk8s kubectl'
+
+
+//enable dashboard
+sudo microceph.ceph mgr module enable dashboard
+sudo microceph.ceph dashboard create-self-signed-cert
+
+bash -c 'echo adminadmin | sudo tee /root/pwd.txt'
+sudo microceph.ceph dashboard ac-user-create admin -i /root/pwd.txt administrator
+
+microceph disk list     
+
+
+microk8s kubectl get csidrivers
+microk8s kubectl get storageclass
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ceph-rbd
+EOF
+
+
+kubectl get pvc
+
+
+
+//////////
+
+juju ssh microk8s/leader 
+sudo apt  install jq 
+IPADDR=$(ip -4 -j route get 2.2.2.2 | jq -r '.[] | .prefsrc')
+microk8s enable metallb:14.14.196.1-14.14.197.254
+ 
+
+160.30.63.131
+
+
+////
+microk8s helm3 install rancher rancher-stable/rancher \
+  --namespace cattle-system \
+  --set hostname=rancher.loc \
+  --set bootstrapPassword=admin \
+  --set replicas=1
+
+  LhSn3twu4NDnePpv
+
+
+
+  microk8s helm3  install gitlab gitlab/gitlab \
+  --namespace gitlab \
+  --set global.hosts.domain=gitlab.loc \
+  --set certmanager-issuer.email=admin@example.com \
+  --set global.ingress.configureCertmanager=true \
+  --set global.ingress.tls.enabled=true \
+  --set global.storage.class=ceph-rbd
+
+
+
+
+
+
+
+
+
+
+ 
+
+admin-password: SoVlRK4lzeXp
+url: http://14.14.196.1/cos-grafana

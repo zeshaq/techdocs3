@@ -1,0 +1,878 @@
+name: zed-v7-bundle
+local_overlay_enabled: true
+series: jammy
+variables:
+  openstack-origin: &openstack-origin cloud:jammy-zed
+  openstack-charm-channel: &openstack-charm-channel zed/stable
+  ovn-charm-channel: &ovn-charm-channel 22.09/stable
+  ceph-charm-channel: &ceph-charm-channel quincy/stable
+  mysql-charm-channel: &mysql-charm-channel 8.0/stable
+  data-port: &data-port br-ex:enp5s0
+  worker-multiplier: &worker-multiplier 0.25
+  osd-devices: &osd-devices /dev/sdb /dev/sdc /dev/sdd
+  expected-osd-count: &expected-osd-count 3
+  expected-mon-count: &expected-mon-count 3
+
+
+machines:
+  "0":
+    constraints: tags=ceph-osd
+    base: ubuntu@22.04/stable
+  "1":
+    constraints: tags=ceph-osd
+    base: ubuntu@22.04/stable
+  "2":
+    constraints: tags=ceph-osd
+    base: ubuntu@22.04/stable
+  "3":
+    constraints: tags=octavia
+    base: ubuntu@22.04/stable
+  "4":
+    constraints: tags=nova-compute
+    base: ubuntu@22.04/stable
+  "5":
+    constraints: tags=nova-compute
+    base: ubuntu@22.04/stable
+  "6":
+    constraints: tags=nova-compute
+    base: ubuntu@22.04/stable
+
+saas:
+  grafana-dashboards:
+    url: maas-controller:admin/cos.grafana-dashboards
+  loki-logging:
+    url: maas-controller:admin/cos.loki-logging
+  prometheus-receive-remote-write:
+    url: maas-controller:admin/cos.prometheus-receive-remote-write
+applications:
+
+  barbican:
+    charm: barbican
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+  barbican-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  barbican-vault:
+    charm: barbican-vault
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+  ceph-dashboard:
+    charm: ceph-dashboard
+    channel: quincy/stable
+    
+    base: ubuntu@22.04/stable
+
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+  ceph-mon:
+    charm: ceph-mon
+    channel: quincy/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 3
+    options:
+      expected-osd-count: 1
+      monitor-count: 3
+      source: cloud:jammy-zed
+
+
+  ceph-osd:
+    charm: ceph-osd
+    channel: quincy/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 3
+    to:
+    - "0"
+    - "1"
+    - "2"
+    options:
+      osd-devices: /dev/sdb /dev/sdc /dev/sdd
+
+  ceph-radosgw:
+    charm: ceph-radosgw
+    channel: quincy/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+  cinder:
+    charm: cinder
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+    num_units: 1
+    options:
+      block-device: None
+      glance-api-version: 2
+      openstack-origin: cloud:jammy-zed
+
+    storage:
+      block-devices: loop,10240M
+  cinder-backup:
+    charm: cinder-backup
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+  cinder-ceph:
+    charm: cinder-ceph
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+  cinder-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+
+  dashboard-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+
+
+  glance:
+    charm: glance
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+    num_units: 1
+    options:
+      openstack-origin: cloud:jammy-zed
+
+  glance-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@20.04/stable
+  glance-simplestreams-sync:
+    charm: glance-simplestreams-sync
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+    options:
+      frequency: weekly
+      mirror_list: '[{url: ''http://cloud-images.ubuntu.com/releases/'', name_prefix:
+        ''ubuntu:released'', path: ''streams/v1/index.sjson'', max: 1, item_filters:
+        [ ''release~(focal|jammy)'', ''arch~(x86_64|amd64)'', ''ftype~(disk1.img|disk.img)'']}]'
+      run: true
+
+
+  grafana-agent:
+    charm: grafana-agent
+    channel: latest/stable
+    base: ubuntu@22.04/stable
+  heat:
+    charm: heat
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+    num_units: 1
+
+  heat-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@20.04/stable
+  keystone:
+    charm: keystone
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+    options:
+      openstack-origin: cloud:jammy-zed
+
+  keystone-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+
+  magnum:
+    charm: magnum
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+    options:
+      cluster-user-trust: true
+
+  magnum-dashboard:
+    charm: magnum-dashboard
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+  magnum-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  masakari:
+    charm: masakari
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 3
+    options:
+      vip: 14.14.192.1
+
+  masakari-hacluster:
+    charm: hacluster
+    channel: 2.4/stable
+    base: ubuntu@22.04/stable
+    options:
+      cluster_count: 3
+      maas_credentials: 8efKBmdeQuZtSBVmaW:C6FUtCY8fJaGAWfWdk:xaTqNEmGJf5mRJv963Bn6gnYyRXbCCEM
+      maas_url: http://14.14.0.2:5240/MAAS
+  masakari-monitors:
+    charm: masakari-monitors
+    channel: 2024.1/stable
+    
+    base: ubuntu@22.04/stable
+  masakari-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  memcached:
+    charm: memcached
+    channel: latest/stable
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+  mysql-innodb-cluster:
+    charm: mysql-innodb-cluster
+    channel: 8.0/stable
+    base: ubuntu@22.04/stable
+    num_units: 3
+
+  neutron-api:
+    charm: neutron-api
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+    num_units: 1
+    options:
+      enable-ml2-port-security: true
+      flat-network-providers: physnet1 physnet2
+      neutron-security-groups: true
+      openstack-origin: cloud:jammy-zed
+
+  neutron-api-plugin-ovn:
+    charm: neutron-api-plugin-ovn
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+  neutron-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  nova-cloud-controller:
+    charm: nova-cloud-controller
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+
+    num_units: 1
+
+    options:
+      console-access-protocol: novnc
+      network-manager: Neutron
+      openstack-origin: cloud:jammy-zed
+
+  nova-compute:
+    charm: nova-compute
+    channel: zed/stable
+    base: ubuntu@22.04/stable
+    num_units: 3
+    to:
+    - "4"
+    - "5"
+    - "6"
+
+    options:
+      config-flags: default_ephemeral_format=ext4
+      cpu-allocation-ratio: 10
+      enable-live-migration: true
+      enable-resize: true
+      migration-auth-type: ssh
+      openstack-origin: cloud:jammy-zed
+
+  nova-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    base: ubuntu@22.04/stable
+  nrpe:
+    charm: nrpe
+    channel: latest/stable
+    
+    base: ubuntu@22.04/stable
+  ntp:
+    charm: ntp
+    channel: latest/stable
+
+    base: ubuntu@22.04/stable
+
+  octavia:
+    charm: octavia
+    channel: zed/stable
+    base: ubuntu@22.04/stable
+    num_units: 1
+    to:
+    - "3"
+    options:
+    
+      debug: true
+      lb-mgmt-controller-cacert: |-
+        LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURjekNDQWx1Z0F3SUJBZ0lVSWRDWTJDSWdu
+        UDY4S2lvaEZqS3pXYnozZGtBd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1NURUxNQWtHQTFVRUJoTUNW
+        Vk14RWpBUUJnTlZCQWdNQ1ZOdmJXVnpkR0YwWlRFTU1Bb0dBMVVFQ2d3RApUM0puTVJnd0ZnWURW
+        UVFEREE5M2QzY3VaWGhoYlhCc1pTNWpiMjB3SGhjTk1qVXdNekUxTWpBd05UQTVXaGNOCk1qWXdN
+        ekUxTWpBd05UQTVXakJKTVFzd0NRWURWUVFHRXdKVlV6RVNNQkFHQTFVRUNBd0pVMjl0WlhOMFlY
+        UmwKTVF3d0NnWURWUVFLREFOUGNtY3hHREFXQmdOVkJBTU1EM2QzZHk1bGVHRnRjR3hsTG1OdmJU
+        Q0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFNSGFBQ3FKeWN6Wk1u
+        MWlpV2VQM1cxSzRNVnNibDU4CjNtckJNZWtENVdIWmxrM2xKbDEzM1V0SGtDK3FUYTV5dHZEb3lt
+        b1ZTamhKeWpSWXZpanBOYkJlbjJWZVhLaTcKOFc3U0xMcW5YQlJkd0FPWHdBTTJkQTR1ZzFzdTZB
+        YVJWRGl6eTU3aEF5TERZR3NwSElQMXZHajV2KytYbndGQQpWZDl0RklJL21CblhYUGxrQjNjNzhp
+        WDl2VFgzSDZBYmIwTGFmaFo4N1N0MEpaTE1QK0lvYWNiTTdMb2krNUtICjlYVjY2ak5XSVBaTzhj
+        aVdocjVobUhEM3IvSWxVY1ptSlBoRXBLOGltT0RqRHlSeThFNzBhbjZRUXc1RWl5SVoKVzZ5eVRq
+        bWNsbFlCSzhxbXY3eTlxNW4vVVNORFpKMDJIYlF3TTY2M2ttWEptVllndis0S3lCY0NBd0VBQWFO
+        VApNRkV3SFFZRFZSME9CQllFRkdyWXh3b0dWNlQvWHc1TUkwNFJPN01HT2djTk1COEdBMVVkSXdR
+        WU1CYUFGR3JZCnh3b0dWNlQvWHc1TUkwNFJPN01HT2djTk1BOEdBMVVkRXdFQi93UUZNQU1CQWY4
+        d0RRWUpLb1pJaHZjTkFRRUwKQlFBRGdnRUJBRHFYbjFkUTlreDdOb3FWbkZ5eEZIY1kwMW0rTG1o
+        eFVCanMxVUxJaUh0WDJpV2lZUkMzcUZheAozSWZsR3FVUVJ0RWhaR1BWT1czZktTUlZ1NXd2ak5G
+        ajlFMmVwRDRIeTlYUjdGLzEvL25KenFvOGdnMzlVeHhHCmxNVEJuMXRNUE9CSll4bzBuWkZJRjZM
+        SlRaWmtOVEhRQ011ZnkxdUpxUlN2TVVodStlVUVVdW43dy9yN3pJaTkKeFdMeDVvby9RTzdGUDZz
+        UE9zVHFrU1V4UG9WSFZhQ3JrTTlid2hGMnE4K20xZ0NQZ2pJM3FPdnpnQ2dVcUFpTgpKNVI0U0ZD
+        K0dkZE5nLzNheTRSWlRydUJCMDY0S0RUZ3VjMWRVb0dvZmNBcTRZN3B5NU5MaDhhOTlOenJaemRE
+        CjFMdzlNcFhHanJubkp1WlpZeHVmM0xrby9CWmpWd3M9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0t
+        LS0K
+      lb-mgmt-controller-cert: |-
+        Q2VydGlmaWNhdGU6CiAgICBEYXRhOgogICAgICAgIFZlcnNpb246IDMgKDB4MikKICAgICAgICBT
+        ZXJpYWwgTnVtYmVyOgogICAgICAgICAgICAxYjphZTo5NjoxYjpjYjozOTo3ZDo0NTphMzo4OTo1
+        Yzo2NzpjMjoxMTo3MjozMzo5MDpkNDo4Mzo2NQogICAgICAgIFNpZ25hdHVyZSBBbGdvcml0aG06
+        IHNoYTI1NldpdGhSU0FFbmNyeXB0aW9uCiAgICAgICAgSXNzdWVyOiBDPVVTLCBTVD1Tb21lc3Rh
+        dGUsIE89T3JnLCBDTj13d3cuZXhhbXBsZS5jb20KICAgICAgICBWYWxpZGl0eQogICAgICAgICAg
+        ICBOb3QgQmVmb3JlOiBNYXIgMTUgMjA6MDU6MDkgMjAyNSBHTVQKICAgICAgICAgICAgTm90IEFm
+        dGVyIDogTWFyIDE1IDIwOjA1OjA5IDIwMjYgR01UCiAgICAgICAgU3ViamVjdDogQz1VUywgU1Q9
+        U29tZXN0YXRlLCBPPU9yZywgQ049d3d3LmV4YW1wbGUuY29tCiAgICAgICAgU3ViamVjdCBQdWJs
+        aWMgS2V5IEluZm86CiAgICAgICAgICAgIFB1YmxpYyBLZXkgQWxnb3JpdGhtOiByc2FFbmNyeXB0
+        aW9uCiAgICAgICAgICAgICAgICBQdWJsaWMtS2V5OiAoMjA0OCBiaXQpCiAgICAgICAgICAgICAg
+        ICBNb2R1bHVzOgogICAgICAgICAgICAgICAgICAgIDAwOmJiOmQ1OjMxOjIyOjc0OmZjOmY2OmIz
+        OmRmOjlhOmQ5OjI0OjYzOmE5OgogICAgICAgICAgICAgICAgICAgIDk3OjU1OjA2OjZkOjE2OjJl
+        OjNjOjZlOmU1OmQ0OjJhOmI4OjI5OjJiOjIxOgogICAgICAgICAgICAgICAgICAgIGI2OjAwOjA2
+        OjdkOjFmOjY5OmZlOjk0OjFiOmMwOjg1OjllOjU4OjRkOmM4OgogICAgICAgICAgICAgICAgICAg
+        IGUyOmI5OjA5OmI1OmVlOmQ5OmIxOjFmOmQzOmE1OjNmOmU3Ojg1OmZhOjJiOgogICAgICAgICAg
+        ICAgICAgICAgIGJiOmE3OjFjOmQ5OjVlOmNiOjZmOjJmOjgwOmZkOjQzOjEzOmVmOjA5OjI3Ogog
+        ICAgICAgICAgICAgICAgICAgIDJjOmZiOjhkOjliOmM5OjlkOjNiOjZhOjZlOjQzOmExOjU1OmVk
+        OjI1OjRhOgogICAgICAgICAgICAgICAgICAgIDU2OmViOjk1OjdjOmE4OjkwOmZhOmM1OmM2OjBk
+        OmE2OmI0Ojk1OmIxOmE2OgogICAgICAgICAgICAgICAgICAgIDNhOjBiOjI5OjZkOmIyOjAxOjY5
+        OmQ2OmE2OjZkOmVjOmQxOjUxOjNhOmFiOgogICAgICAgICAgICAgICAgICAgIDBlOmQ5OmE1OmIx
+        OjYwOjZlOjNlOjliOmQxOjY2OmM1Ojg0OjE1OmFjOjdiOgogICAgICAgICAgICAgICAgICAgIDNi
+        OjAzOjA2OjcwOjQ5OjMxOmY0OjRhOmY2OjBmOmE4OjMzOjNlOmRjOmUwOgogICAgICAgICAgICAg
+        ICAgICAgIGI0OjFhOjJiOjcxOmYwOjgzOjk4OjIyOjQxOmZmOjRmOmEyOmFlOjNlOmFiOgogICAg
+        ICAgICAgICAgICAgICAgIGM2OjdiOjI2OjZkOmQyOjI5OmM5OjU3OjdlOmFlOjFlOjFkOmM1OmI2
+        OjkzOgogICAgICAgICAgICAgICAgICAgIGM3OmMwOmU1OmEwOmM0OmI1OmNhOjVlOmM5OjZlOjRh
+        OjhiOmFjOjQ2OmZmOgogICAgICAgICAgICAgICAgICAgIGZjOjY5OjFjOjRmOjk5OmJlOjY4OjRk
+        OjNmOmM2OmQ4OmU5OjJkOjk1OmEzOgogICAgICAgICAgICAgICAgICAgIDAzOmRiOjAzOmQzOjU4
+        OjAxOjY5OjczOjkzOjdlOjQxOjIxOjZhOjc2OjlkOgogICAgICAgICAgICAgICAgICAgIGZkOmM0
+        OmI4OjVlOjNhOjllOjY4OjU1OjI2OjcyOjAwOmFhOjE4OmZhOjVhOgogICAgICAgICAgICAgICAg
+        ICAgIDBmOmYyOjA1OjcyOjA2OjJhOmIwOjEwOjA3OjA5OjAxOjFlOjYwOmIyOjNmOgogICAgICAg
+        ICAgICAgICAgICAgIGFlOjhmCiAgICAgICAgICAgICAgICBFeHBvbmVudDogNjU1MzcgKDB4MTAw
+        MDEpCiAgICAgICAgWDUwOXYzIGV4dGVuc2lvbnM6CiAgICAgICAgICAgIFg1MDl2MyBCYXNpYyBD
+        b25zdHJhaW50czogCiAgICAgICAgICAgICAgICBDQTpGQUxTRQogICAgICAgICAgICBYNTA5djMg
+        U3ViamVjdCBLZXkgSWRlbnRpZmllcjogCiAgICAgICAgICAgICAgICA2MjpCOToxNzo3Mzo2NzpC
+        MTpGQzowMTozODoxMDo1Rjo1RDowMTo5NjoxOTpEODoxMjoyNDpBQzowMwogICAgICAgICAgICBY
+        NTA5djMgQXV0aG9yaXR5IEtleSBJZGVudGlmaWVyOiAKICAgICAgICAgICAgICAgIDZBOkQ4OkM3
+        OjBBOjA2OjU3OkE0OkZGOjVGOjBFOjRDOjIzOjRFOjExOjNCOkIzOjA2OjNBOjA3OjBECiAgICBT
+        aWduYXR1cmUgQWxnb3JpdGhtOiBzaGEyNTZXaXRoUlNBRW5jcnlwdGlvbgogICAgU2lnbmF0dXJl
+        IFZhbHVlOgogICAgICAgIDA2OjQ0OjQ3OjI1OjY1OmVkOmZjOmM5OmE1OmVkOjA1OjI1OmFkOmM1
+        OjU5OjIwOjJmOmIzOgogICAgICAgIGQxOjAwOjZmOmVjOjExOmZmOjViOmMwOmRiOmIxOmE0OmU4
+        OmM1OjIzOjYxOjU3OjAyOmY5OgogICAgICAgIDhjOjY1OjMwOmEyOjNjOjBhOjU1OjVlOmU4OjQy
+        OmY5OmVlOjhkOjBhOjhmOjcyOjUxOmE3OgogICAgICAgIDY0OmJlOmNhOjBmOmRlOmM0OjRhOmYx
+        OjE0OjUwOjFlOmQzOjliOmUxOmE3OjE0OjBmOmJiOgogICAgICAgIGMzOjJhOjZjOmYyOmI5OjY0
+        OmEwOjVhOjQ4OjM2OmJiOjcwOmEyOmFkOjdhOmExOjMxOmNjOgogICAgICAgIDNjOmE3OjBiOjcy
+        OjgyOjFiOjE2OjU4OmQ3OmQ5OmQzOjM4OjAyOjcyOjAzOjBkOjAwOmQ1OgogICAgICAgIDE0Ojhk
+        OmZjOmE3OjM1OmRhOmIwOjk1OmE5OjY3OjFiOmZjOmZlOjYxOmYyOmJmOjg1OmNjOgogICAgICAg
+        IDhkOjZkOjNkOjE5OjY2OjQ2OmFkOmNhOjc5OmJjOjZmOmIwOjEzOjFlOjk4OjFlOjAzOjZmOgog
+        ICAgICAgIDY3OmJlOmU3OjljOmYwOmFhOjAwOmYwOmI0OjI2OjUyOmQ4OmEyOjZmOjE5Ojc5OjAz
+        OjYyOgogICAgICAgIGVjOjA1OjM0OjMxOmUwOjUxOjFlOjA3OmYwOjZiOmIwOjU0OjczOjdiOmZj
+        OjA2OmM4OjY0OgogICAgICAgIDQ2OjhjOjc4Ojg4Ojc2Ojc3Ojg0OjBmOjRlOmI1OjkzOjY2Ojhk
+        OmE2OmVhOjE5OmE3OjY2OgogICAgICAgIDUwOjhjOmJmOmFjOjk2OjQxOmM4OjMyOjc5OjlkOmQ0
+        OmU3OmRmOjc3OmUzOmQ1OjMwOmQ4OgogICAgICAgIGRjOjBlOjFlOmY2OjIxOjdlOmUzOjFmOjEx
+        OmU1OjkwOmE4OmRiOjA4OmVkOmIwOmI0OjUyOgogICAgICAgIGE3OmYzOjMzOmE3Ojc4OmE0OjY1
+        Ojk2OmJkOjY2OmFlOjQ5OjY0OjIxOjdlOmMzOmY4OmIzOgogICAgICAgIGY1OjU5OjM1OmUwCi0t
+        LS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlEYlRDQ0FsV2dBd0lCQWdJVUc2NldHOHM1ZlVX
+        amlWeG53aEZ5TTVEVWcyVXdEUVlKS29aSWh2Y05BUUVMCkJRQXdTVEVMTUFrR0ExVUVCaE1DVlZN
+        eEVqQVFCZ05WQkFnTUNWTnZiV1Z6ZEdGMFpURU1NQW9HQTFVRUNnd0QKVDNKbk1SZ3dGZ1lEVlFR
+        RERBOTNkM2N1WlhoaGJYQnNaUzVqYjIwd0hoY05NalV3TXpFMU1qQXdOVEE1V2hjTgpNall3TXpF
+        MU1qQXdOVEE1V2pCSk1Rc3dDUVlEVlFRR0V3SlZVekVTTUJBR0ExVUVDQXdKVTI5dFpYTjBZWFJs
+        Ck1Rd3dDZ1lEVlFRS0RBTlBjbWN4R0RBV0JnTlZCQU1NRDNkM2R5NWxlR0Z0Y0d4bExtTnZiVEND
+        QVNJd0RRWUoKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTHZWTVNKMC9QYXozNXJa
+        SkdPcGwxVUdiUll1UEc3bAoxQ3E0S1NzaHRnQUdmUjlwL3BRYndJV2VXRTNJNHJrSnRlN1pzUi9U
+        cFQvbmhmb3J1NmNjMlY3TGJ5K0EvVU1UCjd3a25MUHVObThtZE8ycHVRNkZWN1NWS1Z1dVZmS2lR
+        K3NYR0RhYTBsYkdtT2dzcGJiSUJhZGFtYmV6UlVUcXIKRHRtbHNXQnVQcHZSWnNXRUZheDdPd01H
+        Y0VreDlFcjJENmd6UHR6Z3RCb3JjZkNEbUNKQi8wK2lyajZyeG5zbQpiZElweVZkK3JoNGR4YmFU
+        eDhEbG9NUzF5bDdKYmtxTHJFYi8vR2tjVDVtK2FFMC94dGpwTFpXakE5c0QwMWdCCmFYT1Rma0Vo
+        YW5hZC9jUzRYanFlYUZVbWNnQ3FHUHBhRC9JRmNnWXFzQkFIQ1FFZVlMSS9ybzhDQXdFQUFhTk4K
+        TUVzd0NRWURWUjBUQkFJd0FEQWRCZ05WSFE0RUZnUVVZcmtYYzJleC9BRTRFRjlkQVpZWjJCSWty
+        QU13SHdZRApWUjBqQkJnd0ZvQVVhdGpIQ2daWHBQOWZEa3dqVGhFN3N3WTZCdzB3RFFZSktvWklo
+        dmNOQVFFTEJRQURnZ0VCCkFBWkVSeVZsN2Z6SnBlMEZKYTNGV1NBdnM5RUFiK3dSLzF2QTI3R2s2
+        TVVqWVZjQytZeGxNS0k4Q2xWZTZFTDUKN28wS2ozSlJwMlMreWcvZXhFcnhGRkFlMDV2aHB4UVB1
+        OE1xYlBLNVpLQmFTRGE3Y0tLdGVxRXh6RHluQzNLQwpHeFpZMTluVE9BSnlBdzBBMVJTTi9LYzEy
+        ckNWcVdjYi9QNWg4citGekkxdFBSbG1ScTNLZWJ4dnNCTWVtQjRECmIyZSs1NXp3cWdEd3RDWlMy
+        S0p2R1hrRFl1d0ZOREhnVVI0SDhHdXdWSE43L0FiSVpFYU1lSWgyZDRRUFRyV1QKWm8ybTZobW5a
+        bENNdjZ5V1FjZ3llWjNVNTk5MzQ5VXcyTndPSHZZaGZ1TWZFZVdRcU5zSTdiQzBVcWZ6TTZkNApw
+        R1dXdldhdVNXUWhmc1A0cy9WWk5lQT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQotLS0tLUJF
+        R0lOIFBSSVZBVEUgS0VZLS0tLS0KTUlJRXZBSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS1l3
+        Z2dTaUFnRUFBb0lCQVFDNzFURWlkUHoyczkrYQoyU1JqcVpkVkJtMFdManh1NWRRcXVDa3JJYllB
+        Qm4wZmFmNlVHOENGbmxoTnlPSzVDYlh1MmJFZjA2VS81NFg2Cks3dW5ITmxleTI4dmdQMURFKzhK
+        Snl6N2padkpuVHRxYmtPaFZlMGxTbGJybFh5b2tQckZ4ZzJtdEpXeHBqb0wKS1cyeUFXbldwbTNz
+        MFZFNnF3N1pwYkZnYmo2YjBXYkZoQldzZXpzREJuQkpNZlJLOWcrb016N2M0TFFhSzNIdwpnNWdp
+        UWY5UG9xNCtxOFo3Sm0zU0tjbFhmcTRlSGNXMms4ZkE1YURFdGNwZXlXNUtpNnhHLy94cEhFK1p2
+        bWhOClA4Ylk2UzJWb3dQYkE5TllBV2x6azM1QklXcDJuZjNFdUY0Nm5taFZKbklBcWhqNldnL3lC
+        WElHS3JBUUJ3a0IKSG1DeVA2NlBBZ01CQUFFQ2dnRUFDU0NBWFRUREQvZklqejBxNC83YklDSUtU
+        ZkFjTnFWTFRISWJhZ0dlMXR4NQoydnRyQitaYlVnTFNOcUZpeHV2K1g2ZExVSWtYdUFXM2dHTDhv
+        TStwams0alRuTWRtMU5PSTZzNEo5Y0hNV0pHCi8xSnhUZGNmaVZiVjUyZWhvWTA5Nmp0SDhZaEgx
+        OVNFY0lOb1ZhUjA4SjJ3ckxlMUV6MDVvUURJb0M5ck1tWUMKbjRuT1RkRGdHUmV0Y0dQeEtMaDR2
+        ckxhK0hCQ0FIV2F4Y1dyRWNxY29jMVdJWk9YaWM5SnJtL0JLZi9iU04xagpuT1B6RjNuUERQTkdX
+        RW02WStLdzB2KzFUcTQ1ZmxhSGpKQ2c3YUVIWmxEN3c3Z05HRDVtd0d0NzhWZml5MG45CnVSUzh5
+        Q3BOSkNlS210NVIzdGhERnhvV1RyWk50aC80OWxoVEplN01jUUtCZ1FEaER0a2hkRnVPa1NHTjgv
+        RHoKZUdaVm1CYkw4QmhuRXhycEJIUDBCUVpXYit5UlBidjdDSkJZU1VnZ3J2MWFUUW14aGJVMENF
+        Q0NJemhHa24vUApYQU1MTDNuVW5kSXI5OWh2amJwbE1VT1duZVltUlNQOThuRGlTdWxyTklyZVZU
+        Z0w0TEFnUGRGdmFTWkZ3bjRBCnhraEd4bWFrUUlRUmpSNm5NanEvYlZVV2tRS0JnUURWcUNuSDZq
+        WkZHMTk1czJaQ2ZORE9CcWhGellobGFJYzIKRFBIekxpNDlwQytCc3NmQVp1ZFJmTFVudThHOGxp
+        T1loNUI2N1ZrbVNZU2xVTGtsa3lvbnBnTDV2V3Q4bmxHegoyTW9JMkJXN0NPa0lkUGcvS2x1c0hM
+        VWpsVU9JeDcyNnFFNWFTdG9ocnM5R2RRRDhrNCs0bExjV3M0M24xUTBJCldYVVlXR3BESHdLQmdB
+        Ym5CNjNJL2MzZmthSGk2MjdzTUdkTHBOZFlZOGMxaE12RXdUR292Y3NFMzhLTW5DbFUKMStoOVJ1
+        TUp1dWQ4R1dJQ2NjNUl1b0hEUnNTVFZhd3NiRU41ajBrQUZpUVhFK0pIL0lHQ0EwcXBTUmUvWXgw
+        MAp4RldNYXFCSkdrRTdaOTZsWTRGNW8rVEEydFdrNDJ4dXFHVFRUTzZZcy9ROTJjVFMrNDVIY2lh
+        aEFvR0FDV2J4CkQ3OGF6RWU4RjlyeE1SUFZESHYyZzd2YnVMcTAySWdSVGFaR21xZlMvMTRpdERE
+        VEZSN3J5ZWZWU3J0QXJjR3AKZGY5ajRPOXpTdU1XZ3JUTE1odDRIZzFiNFl3R0JHZ1IyL25HV3dp
+        MVdJM3RMcnBxZGxSOUZDZkpaUWVGTGVXaQpMUThHTWwxQytkTEVURmtpQmZsbFpUWlpsRTRuMktv
+        M0lPOGpIZmtDZ1lBV3RPdmhUYmJha2NmN1VsdjhQMFhaCmovamNFRktpQXNwTjhGS1JsNnE1Nnp3
+        MUMxaGsyTkVtOHh1bi9SMGN0c1huZGhuS1R0bisvdmhmWmt3QTZVY3IKMlpmWWhLZnRDR0VJcHhv
+        YXp3d29PK2wxR1kvMGxLVVpJejhxa1FIeTd1TnpMUS9jWXQzQ0dlYlVnOGZOSjRSVgpqTXBOR1Bk
+        U1pPNlNEcWVWK0tVaitRPT0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo=
+      lb-mgmt-issuing-ca-key-passphrase: foobar
+      lb-mgmt-issuing-ca-private-key: |-
+        LS0tLS1CRUdJTiBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQpNSUlGTFRCWEJna3Foa2lHOXcw
+        QkJRMHdTakFwQmdrcWhraUc5dzBCQlF3d0hBUUloVTd1SzlJaDlHRUNBZ2dBCk1Bd0dDQ3FHU0li
+        M0RRSUpCUUF3SFFZSllJWklBV1VEQkFFcUJCQlA5Y2pCY1NoQW5JQ2RnN294NGRXRUJJSUUKME0x
+        ZndRYmhGaktlM1pjSkptMTZmTWdaNkc2VkQyd000ZFk0dVUxS2tHazBtNE55cUJ5a3JHbkRuL0lJ
+        azVZWAo0RWJXMEJXM0hDSUNmc2xqa1NvRVRvZFR0QithR21pQWQ2NERIVzU3WW9peUxSUGVTZDFI
+        by8rdHVRcDV4N0NBCkVoZ3VKbXMrSDMrOWxUb3RwR2Rqa0V0OTJSUmQxVitQWXNnbG9qRW5HbXhE
+        ZFJtQWtSZzdaOUtiMWdoNHFlNXcKM3ZUa2M0UndjZTJjMlpXdC9rVVB2dXVnZGgyTkdqVDNFVXVL
+        QTkyc1V0RlRlVkpMZFNQaGJseUM2R0JwNTJwagpHWDFSR1YvS0huazlXNkxJelF0Y3huc0JBVmZL
+        b3hBdDl6V2MrTUVqWENXSWN2QmxBWno1Mmc5dmZSNEVEdWlBCmJRQm51M09UMy8zaTNvSkVBMWhz
+        bUZGQ1pJdDRxekh0V1dWMlRsSFArM1Y4TWVXek83WmRQMHFoQXdTNlA5OVUKYUhpTlpiMUp5SWV1
+        T1YwNkU5a1BzK0tRZUI3R0Y4ajMvTnJCU01RY3dqZmdCTjlQY1k1THEzNUE1bGY3Q2JLOApIWWVO
+        akNiWnVSamdLOXhKTk5McktxeTJ3ejFXWGpUOVozc25CZjR3MGp5Mnprb1dMOC8yMGxRWlMyVFJ1
+        SThwClVZMW4wd2dRakhaYWxDeXQ2YXh6VU1NNmQxT1ozYnN0di8vWE9waVlXSHlYMGltbDJlSTdS
+        R2UzN0lHWjBkbHYKYmhmQTlvSEN1Z1pWellVS1IzMDVaRUdiN2M1ZStRMjFHcElHekpPalh0dUhp
+        b2REQVFyMGVKQmJUNzJyaE9BNAo5WkhpMStPWGhNd1Z3VHk1NHdlbHFwQmMxck0vczBwa1Qzdnl3
+        am04RkN1d3ZPenVYY2RpNTRBVjRrMStIUFJHCi9Jd05iMkNzVEpGbUdqdEd6dXNXTHUzcWgvTi9p
+        V3J1dHNZTzc2c2EwNDRRbldSaVNMVlpSMEZaUUswVWh5MjUKOUJZV3dWYlV1MVNSNDRncklrQVVY
+        OUx5TndxcHh1ejRUdjE2OG03WWVham9zQXA1WXRTbkQ1K1dhcDh0VkZ1Rwo0YVdKd2F0elcxcXV5
+        NWNiU3VHQURva3FYMWlKcWk0QmNxbWJvek1wK21VM0ZFcE5UMnZyU2Vuajc2Z2pzV1N4CmNGWFUw
+        YzMwdkhsanBsWXBHN2F1UGF1MGVUTHhGN3kyYVJkRTViR1Jrd2FLV2tQLzBueGdzV3JZUmdhNkQ2
+        cXMKTEFNSVdKN0VKaWxyRjlYYW5RLy83aFlYZXJVR1MvdHphRW9HLzRoOGhpUWRlTC9QT2FybWpW
+        bHQ2SDA3dDJUbQo2d0ZYb2dVUmlYYVNlb1lTMEp4djNBU05CMllGK1g4aDZxV0ZsWlo4b0gvR0V1
+        dzE5SHdCLzZNdEVkWHZucTlaCkdrRlR2WitaUnJrZTVrdTNXcURsVzh2MGZ1d0dIZ0xKTWlSMWRJ
+        WFZxb0dzUFR3Y3NZU00rQmZvU1F0djhTSzkKL21vRTA1ZXNtWGc0a0U3R2l3V1JVUHRkWVZ2ZWdB
+        ZTZzNHBnUUl4bzdqcFdCSFVuS2haUWdwZU5MWHRtVjVIMgo1YkJoN3BuNVZGR3Ayc2xzL2x6bHdm
+        SENwWXQ3UkFvSHl4eUhhVXRxWFI2dVBWM05Vd1BLWlJNTmo2Z1BKOUtCCkVRYTQ0Tk1QUDRoZzJF
+        ZmtIT2hac2pvMG9ybWF1bi9VTzU0Z2ZKeUFjQWhpVEo0amExODJKcVhkcndweWJMUkQKT3BRTHl3
+        c0ZBUHBWRTExUmlZZ2dMcmZYc2dzdnpNb0tXcG9lelkrMDFaUTNmd2xKOTBTSEZhNlBscVRNdkpM
+        Qwp1MHBSMnpOdE5ia0ZyMTRhSy9LSEIyenNoMW1MUDVwVTFGazdCKy95U3dRc21CMnFnbzlZRGl4
+        YjlRVldDVWUyCmJqSFI0NXlQZmZ3MTZhTkt0dUtwL3RYWjZ5dWFraE9KQTdUd1U4NVJLaXNkQTFG
+        c3NXaS9NRDBZNjl4UEpnNTgKbEhsZEtlcm5KVXo2azRTNzZ2YkRSQWhReWQyUFY2eERSMFdlNEdp
+        UXEvMXdqMi9HV2l0ZW11TjhvZWQxVjR6NwpWbWlYWXpzZUZVeVJmbGpFUXExdWt3ZHNKdEw2OFhK
+        MjZ5TE5MaUtyNmpLcAotLS0tLUVORCBFTkNSWVBURUQgUFJJVkFURSBLRVktLS0tLQo=
+      lb-mgmt-issuing-cacert: |-
+        LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURjekNDQWx1Z0F3SUJBZ0lVVG9KbkNuSHp2
+        UFBmb2lTT1hiS0ZvZFoyUDJZd0RRWUpLb1pJaHZjTkFRRUwKQlFBd1NURUxNQWtHQTFVRUJoTUNW
+        Vk14RWpBUUJnTlZCQWdNQ1ZOdmJXVnpkR0YwWlRFTU1Bb0dBMVVFQ2d3RApUM0puTVJnd0ZnWURW
+        UVFEREE5M2QzY3VaWGhoYlhCc1pTNWpiMjB3SGhjTk1qVXdNekUxTWpBd05UQTVXaGNOCk1qWXdN
+        ekUxTWpBd05UQTVXakJKTVFzd0NRWURWUVFHRXdKVlV6RVNNQkFHQTFVRUNBd0pVMjl0WlhOMFlY
+        UmwKTVF3d0NnWURWUVFLREFOUGNtY3hHREFXQmdOVkJBTU1EM2QzZHk1bGVHRnRjR3hsTG1OdmJU
+        Q0NBU0l3RFFZSgpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFMSk5hWnhYMWN3eTF1
+        TGNzZldXSndBdWIxQkpSOE1HCnRYak01NCtXWXdkSFUzeE4zb3A3eCt3UDRPdUZiQy9ycllLSXhS
+        MU5LcVNJMWhTc0lsZVNQalF0UmQ5bmQ2WFAKQnA1WXpON2VXWHpiTXRoN2Z4S2pLNFhPWmhRa0Fm
+        RHQrUDU3TDNhNzRZNmNxdkROeEZ0cTBzUVZXcUJzdjAyRQpxc3BueHdHRzRtTld6VkdicW9ta0xR
+        T01rY1djSkhTN0licitYTmZIUThZclpnNGYrOWxMNE1iRXduVU5yYjRQCnh3UktsT29xZVFOYTFH
+        SkxNNW90bll4alk4N1hkclpnMGluSUZFZ05WRFd5QStIVHdZSWkwYzFGT3hRUjNSQ3YKeHNjZDE2
+        THJHVGtQUHp5UUdQQnNHVi9UY01sS2t0OUZNMzB5NHQwVTRPcnBlOHpPSC93d0M5MENBd0VBQWFO
+        VApNRkV3SFFZRFZSME9CQllFRkpsQmJFVzhJdFh4eGJFRytxbTh2ajRFbmJwd01COEdBMVVkSXdR
+        WU1CYUFGSmxCCmJFVzhJdFh4eGJFRytxbTh2ajRFbmJwd01BOEdBMVVkRXdFQi93UUZNQU1CQWY4
+        d0RRWUpLb1pJaHZjTkFRRUwKQlFBRGdnRUJBQ2FnZFZIaklNeDBYSXBhWitkWGFxU3QrMkxOQ0Rw
+        bGluZ1hhSHhSaitDRHZscCtMSjFaa3NuUQpBTkpVcjBNeDZJYldaVHFOV2ttSnJtd3REdjlUQlJt
+        cnFZV25WMmNvWVV0b2dreEM1bndoNzg2Tm5pVHBBQ09PCjFXSXRBQ1M5STFXWHFZMjVRVzhRY3NB
+        NjFsTHpBOWhBam9SNjlZdG4yaFIrWHFOYXIweGljTHFxeUcvQWRNRHEKUjI1eG5nZmNMRG12cWF6
+        aUp4THlJdkltelErazY4bHBzM1lrQ3BVRDljVmJabGdGMUhFSGluQzZsVFc0SCtMWQoxWnhiNVJI
+        b2J0QUlReWFmZ0R2UXIranBEZkxKNDB1OFQwYnZMQnFYcUZkczhkZEZtSXhydGoyUjdsZlpZU3li
+        CmpOKzhpMWxWR21mZ3Rvd2UvRStpSHEvTEJLYkFIV2c9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0t
+        LS0K
+      loadbalancer-topology: ACTIVE_STANDBY
+
+  octavia-dashboard:
+    charm: octavia-dashboard
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+  octavia-diskimage-retrofit:
+    charm: octavia-diskimage-retrofit
+    channel: zed/stable
+    base: ubuntu@22.04/stable
+    options:
+      amp-image-tag: octavia-amphora
+  octavia-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  openstack-dashboard:
+    charm: openstack-dashboard
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+    options:
+      cinder-backup: true
+      enforce-ssl: true
+      openstack-origin: cloud:jammy-zed
+
+  openstack-exporter:
+    charm: openstack-exporter
+    channel: latest/edge
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+    options:
+      cache: true
+      cache_ttl: 6s
+
+  ovn-central:
+    charm: ovn-central
+    channel: 22.09/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 3
+
+  ovn-chassis:
+    charm: ovn-chassis
+    channel: 22.09/stable
+    base: ubuntu@22.04/stable
+    options:
+      bridge-interface-mappings: br-ex:enp5s0 br-fx:enp6s0
+      ovn-bridge-mappings: physnet1:br-ex physnet2:br-fx
+  ovn-chassis-octavia:
+    charm: ovn-chassis
+    channel: 22.09/stable
+    base: ubuntu@22.04/stable
+  pacemaker-remote:
+    charm: pacemaker-remote
+    channel: jammy/stable
+    
+    base: ubuntu@22.04/stable
+    options:
+      enable-resources: false
+      enable-stonith: true
+  placement:
+    charm: placement
+    channel: zed/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+
+  placement-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+  rabbitmq-server:
+    charm: rabbitmq-server
+    channel: 3.9/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+
+  telegraf:
+    charm: telegraf
+    channel: latest/stable
+    
+    base: ubuntu@22.04/stable
+  vault:
+    charm: vault
+    channel: 1.8/stable
+    
+    base: ubuntu@22.04/stable
+    num_units: 1
+
+  vault-mysql-router:
+    charm: mysql-router
+    channel: 8.0/stable
+    
+    base: ubuntu@22.04/stable
+
+
+relations:
+- - ceph-mon:client
+  - cinder-backup:ceph
+- - cinder-backup:backup-backend
+  - cinder:backup-backend
+- - ceph-dashboard:dashboard
+  - ceph-mon:dashboard
+- - ceph-dashboard:certificates
+  - vault:certificates
+- - nova-compute:juju-info
+  - masakari-monitors:container
+- - keystone:identity-credentials
+  - masakari-monitors:identity-credentials
+- - nova-compute:juju-info
+  - pacemaker-remote:juju-info
+- - masakari:identity-service
+  - keystone:identity-service
+- - masakari:shared-db
+  - masakari-mysql-router:shared-db
+- - masakari-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - masakari:amqp
+  - rabbitmq-server:amqp
+- - vault:certificates
+  - masakari:certificates
+- - vault:certificates
+  - masakari-monitors:certificates
+- - masakari:ha
+  - masakari-hacluster:ha
+- - masakari-hacluster:pacemaker-remote
+  - pacemaker-remote:pacemaker-remote
+- - nova-compute:amqp
+  - rabbitmq-server:amqp
+- - nova-cloud-controller:identity-service
+  - keystone:identity-service
+- - glance:identity-service
+  - keystone:identity-service
+- - neutron-api:identity-service
+  - keystone:identity-service
+- - neutron-api:amqp
+  - rabbitmq-server:amqp
+- - glance:amqp
+  - rabbitmq-server:amqp
+- - nova-cloud-controller:image-service
+  - glance:image-service
+- - nova-compute:image-service
+  - glance:image-service
+- - nova-cloud-controller:cloud-compute
+  - nova-compute:cloud-compute
+- - nova-cloud-controller:amqp
+  - rabbitmq-server:amqp
+- - openstack-dashboard:identity-service
+  - keystone:identity-service
+- - nova-cloud-controller:neutron-api
+  - neutron-api:neutron-api
+- - cinder:image-service
+  - glance:image-service
+- - cinder:amqp
+  - rabbitmq-server:amqp
+- - cinder:identity-service
+  - keystone:identity-service
+- - cinder:cinder-volume-service
+  - nova-cloud-controller:cinder-volume-service
+- - cinder-ceph:storage-backend
+  - cinder:storage-backend
+- - ceph-mon:client
+  - nova-compute:ceph
+- - nova-compute:ceph-access
+  - cinder-ceph:ceph-access
+- - ceph-mon:client
+  - cinder-ceph:ceph
+- - ceph-mon:client
+  - glance:ceph
+- - ceph-osd:mon
+  - ceph-mon:osd
+- - ntp:juju-info
+  - nova-compute:juju-info
+- - ceph-radosgw:mon
+  - ceph-mon:radosgw
+- - ceph-radosgw:identity-service
+  - keystone:identity-service
+- - placement:identity-service
+  - keystone:identity-service
+- - placement:placement
+  - nova-cloud-controller:placement
+- - keystone:shared-db
+  - keystone-mysql-router:shared-db
+- - cinder:shared-db
+  - cinder-mysql-router:shared-db
+- - glance:shared-db
+  - glance-mysql-router:shared-db
+- - nova-cloud-controller:shared-db
+  - nova-mysql-router:shared-db
+- - neutron-api:shared-db
+  - neutron-mysql-router:shared-db
+- - openstack-dashboard:shared-db
+  - dashboard-mysql-router:shared-db
+- - placement:shared-db
+  - placement-mysql-router:shared-db
+- - vault:shared-db
+  - vault-mysql-router:shared-db
+- - keystone-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - cinder-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - nova-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - glance-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - neutron-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - dashboard-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - placement-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - vault-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - neutron-api-plugin-ovn:neutron-plugin
+  - neutron-api:neutron-plugin-api-subordinate
+- - ovn-central:certificates
+  - vault:certificates
+- - ovn-central:ovsdb-cms
+  - neutron-api-plugin-ovn:ovsdb-cms
+- - neutron-api:certificates
+  - vault:certificates
+- - ovn-chassis:nova-compute
+  - nova-compute:neutron-plugin
+- - ovn-chassis:certificates
+  - vault:certificates
+- - ovn-chassis:ovsdb
+  - ovn-central:ovsdb
+- - vault:certificates
+  - neutron-api-plugin-ovn:certificates
+- - vault:certificates
+  - cinder:certificates
+- - vault:certificates
+  - glance:certificates
+- - vault:certificates
+  - keystone:certificates
+- - vault:certificates
+  - nova-cloud-controller:certificates
+- - vault:certificates
+  - openstack-dashboard:certificates
+- - vault:certificates
+  - placement:certificates
+- - vault:certificates
+  - ceph-radosgw:certificates
+- - vault:certificates
+  - mysql-innodb-cluster:certificates
+- - barbican-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - barbican-mysql-router:shared-db
+  - barbican:shared-db
+- - barbican:amqp
+  - rabbitmq-server:amqp
+- - barbican:identity-service
+  - keystone:identity-service
+- - barbican:secrets
+  - barbican-vault:secrets
+- - barbican-vault:secrets-storage
+  - vault:secrets
+- - octavia-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - octavia-mysql-router:shared-db
+  - octavia:shared-db
+- - octavia:amqp
+  - rabbitmq-server:amqp
+- - octavia:identity-service
+  - keystone:identity-service
+- - octavia:certificates
+  - vault:certificates
+- - ovn-chassis-octavia:ovsdb-subordinate
+  - octavia:ovsdb-subordinate
+- - ovn-chassis-octavia:certificates
+  - vault:certificates
+- - ovn-chassis-octavia:ovsdb
+  - ovn-central:ovsdb
+- - ovn-central:ovsdb-cms
+  - octavia:ovsdb-cms
+- - neutron-api:neutron-load-balancer
+  - octavia:neutron-api
+- - octavia-dashboard:dashboard
+  - openstack-dashboard:dashboard-plugin
+- - glance-simplestreams-sync:identity-service
+  - keystone:identity-service
+- - glance-simplestreams-sync:certificates
+  - vault:certificates
+- - octavia-diskimage-retrofit:juju-info
+  - glance-simplestreams-sync:juju-info
+- - keystone:identity-credentials
+  - octavia-diskimage-retrofit:identity-credentials
+- - rabbitmq-server:amqp
+  - heat:amqp
+- - heat:identity-service
+  - keystone:identity-service
+- - heat:certificates
+  - vault:certificates
+- - heat-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - heat-mysql-router:shared-db
+  - heat:shared-db
+- - openstack-dashboard:dashboard-plugin
+  - magnum-dashboard:dashboard
+- - vault:certificates
+  - magnum-dashboard:certificates
+- - rabbitmq-server:amqp
+  - magnum:amqp
+- - magnum:identity-service
+  - keystone:identity-service
+- - magnum:certificates
+  - vault:certificates
+- - magnum-mysql-router:db-router
+  - mysql-innodb-cluster:db-router
+- - magnum-mysql-router:shared-db
+  - magnum:shared-db
+
+
+
+
+
+
+- - barbican:certificates
+  - vault:certificates
+- - magnum:juju-info
+  - barbican-vault:juju-info
+- - keystone:identity-admin
+  - openstack-exporter:credentials
+- - grafana-agent:cos-agent
+  - openstack-exporter:cos-agent
+- - ceph-mon:cos-agent
+  - grafana-agent:cos-agent
+- - grafana-agent:send-remote-write
+  - prometheus-receive-remote-write:receive-remote-write
+- - grafana-agent:logging-consumer
+  - loki-logging:logging
+- - grafana-agent:grafana-dashboards-provider
+  - grafana-dashboards:grafana-dashboard
+- - telegraf:juju-info
+  - nova-compute:juju-info

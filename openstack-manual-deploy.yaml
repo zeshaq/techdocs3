@@ -1,0 +1,212 @@
+
+
+
+
+
+juju deploy watcher --channel zed/stable
+juju deploy watcher-dashboard --channel zed/stable
+
+
+juju deploy --channel 8.0/stable mysql-router watcher-mysql-router
+juju integrate watcher-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate watcher-mysql-router:shared-db watcher:shared-db
+
+
+juju integrate rabbitmq-server:amqp watcher:amqp
+juju integrate watcher:identity-service keystone:identity-service
+
+
+
+
+juju deploy heat --channel zed/stable
+juju integrate rabbitmq-server:amqp heat:amqp
+juju integrate heat:identity-service keystone:identity-service
+juju integrate heat:certificates vault:certificates
+
+juju deploy --channel 8.0/stable mysql-router heat-mysql-router
+juju integrate heat-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate heat-mysql-router:shared-db heat:shared-db
+
+
+
+juju deploy magnum --channel zed/stable
+juju integrate rabbitmq-server:amqp magnum:amqp
+juju integrate magnum:identity-service keystone:identity-service
+juju integrate magnum:certificates vault:certificates
+
+juju deploy --channel 8.0/stable mysql-router magnum-mysql-router
+juju integrate magnum-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate magnum-mysql-router:shared-db magnum:shared-db
+
+
+
+
+juju deploy designate --channel zed/stable
+
+juju integrate rabbitmq-server:amqp designate:amqp
+juju integrate designate:identity-service keystone:identity-service
+juju integrate designate:certificates vault:certificates
+juju integrate memcached designate
+
+
+juju deploy --channel 8.0/stable mysql-router designate-mysql-router
+juju integrate designate-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate designate-mysql-router:shared-db designate:shared-db
+
+
+juju deploy mysql
+juju deploy rabbitmq-server
+juju deploy keystone
+juju deploy memcached
+juju integrate designate memcached
+juju integrate designate mysql
+juju integrate designate rabbitmq-server
+juju integrate designate keystone
+
+
+
+helm install gitlab gitlab/gitlab \
+  --namespace gitlab \
+  --set global.hosts.domain=gitlab.loc \
+  --set certmanager-issuer.email=admin@example.com \
+  --set global.ingress.configureCertmanager=true \
+  --set global.ingress.tls.enabled=true \
+  --set global.storage.class=ceph-rbd
+
+
+
+----
+  juju deploy ceilometer --channel zed/stable
+
+  juju integrate rabbitmq-server:amqp ceilometer:amqp
+ 
+juju integrate ceilometer:certificates vault:certificates
+ 
+
+
+juju deploy --channel 8.0/stable mysql-router ceilometer-mysql-router
+juju integrate ceilometer-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate ceilometer-mysql-router:shared-db ceilometer:shared-db
+
+juju integrate  ceilometer:metric-service gnocchi:metric-service
+
+
+
+juju integrate  ceilometer:identity-notifications keystone:identity-notifications
+juju integrate  ceilometer:identity-credentials keystone:identity-credentials
+---
+
+juju deploy ceilometer-agent --channel zed/stable
+juju integrate ceilometer:ceilometer-service ceilometer-agent:ceilometer-service
+juju integrate rabbitmq-server:amqp ceilometer-agent:amqp
+juju integrate  nova-compute:nova-ceilometer ceilometer-agent:nova-ceilometer
+
+
+---
+
+
+juju deploy gnocchi --channel zed/stable
+juju integrate gnocchi memcached
+juju integrate gnocchi ceilometer
+juju integrate gnocchi ceph-mon
+
+  juju integrate rabbitmq-server:amqp gnocchi:amqp
+juju integrate gnocchi:identity-service keystone:identity-service
+juju integrate gnocchi:certificates vault:certificates
+ 
+
+
+juju deploy --channel 8.0/stable mysql-router gnocchi-mysql-router
+juju integrate gnocchi-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate gnocchi-mysql-router:shared-db gnocchi:shared-db
+
+
+
+juju deploy aodh --channel zed/stable
+juju integrate rabbitmq-server:amqp aodh:amqp
+juju integrate aodh:identity-service keystone:identity-service
+juju integrate aodh:certificates vault:certificates
+ 
+
+
+juju deploy --channel 8.0/stable mysql-router aodh-mysql-router
+juju integrate aodh-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate aodh-mysql-router:shared-db aodh:shared-db
+
+
+
+
+
+
+
+
+
+
+juju deploy --channel 8.0/stable mysql-router manila-ganesha-mysql-router
+juju integrate manila-ganesha-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate manila-ganesha-mysql-router:shared-db manila-ganesha:shared-db
+
+
+juju deploy manila-ganesha --channel zed/stable
+
+
+--------------------
+
+juju deploy manila --channel zed/stable
+juju deploy --channel 8.0/stable mysql-router manila-mysql-router
+juju integrate manila-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate manila-mysql-router:shared-db manila:shared-db
+
+
+juju integrate rabbitmq-server:amqp manila:amqp
+
+
+
+juju deploy --channel 8.0/stable mysql-router heat-mysql-router
+juju integrate heat-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate heat-mysql-router:shared-db heat:shared-db
+juju integrate heat:identity-service keystone:identity-service
+juju integrate heat:amqp rabbitmq-server:amqp
+juju integrate vault heat
+
+
+
+juju integrate keystone:identity-credentials  magnum:identity-credentials
+juju integrate magnum vault
+juju integrate magnum rabbitmq-server
+juju integrate magnum keystone
+
+
+openstack coe cluster template create k8s-cluster-template2 \
+                           --image fedora-coreos-latest \
+                           --keypair adminkey \
+                           --external-network ext_net \
+                           --dns-nameserver 8.8.8.8 \
+                           --flavor flavor1 \
+                           --docker-volume-size 5 \
+                           --network-driver flannel \
+                           --coe kubernetes
+
+
+                           openstack coe cluster create k8s-cluster2 \
+                      --cluster-template k8s-cluster-template2 \
+                      --master-count 1 \
+                      --node-count 2
+
+
+juju deploy --config swift.yaml swift-proxy
+
+
+
+juju deploy swift-proxy --channel zed/stable --to node-49.maas,node-50.maas,node-51.maas --config swift.yaml
+
+
+
+juju deploy --config swift.yaml swift-storage swift-storage-zone1 --to node-swift-1.maas  --series jammy
+juju deploy --config swift.yaml swift-storage swift-storage-zone2 --to node-swift-2.maas --series jammy
+juju deploy --config swift.yaml swift-storage swift-storage-zone3 --to node-swift-3.maas --series jammy
+
+
+juju integrate swift-proxy:swift-storage swift-storage-zone1:swift-storage
+juju integrate swift-proxy:swift-storage swift-storage-zone2:swift-storage
+juju integrate swift-proxy:swift-storage swift-storage-zone3:swift-storage

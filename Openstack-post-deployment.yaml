@@ -1,0 +1,143 @@
+sudo snap install openstackclients
+wget https://docs.openstack.org/project-deploy-guide/charm-deployment-guide/latest/_downloads/c894c4911b9572f0b5f86bdfc5d12d8e/openrc
+
+source ~/openrc
+env | grep OS_
+
+OS_PASSWORD=tai8Paeth3eeng9i
+
+
+-------------------------------------
+ceph dashboard
+juju run ceph-dashboard/0 add-user username=admin role=administrator
+https://10.5.20.200:8443
+
+
+eUQTMigg2Slr
+---------------------------------------------------
+
+
+openstack network create --external --share \
+   --provider-network-type flat --provider-physical-network physnet1 \
+   ext_net
+
+
+
+
+openstack network create --external --share \
+   --provider-network-type flat --provider-physical-network physnet2 \
+   public_net
+
+
+openstack subnet create --network ext_net  --dns-nameserver 8.8.8.8  \
+   --gateway 14.14.0.1 --subnet-range 14.14.0.0/16 \
+   --allocation-pool start=14.14.198.1,end=14.14.199.254 \
+   ext_subnet
+  
+openstack subnet create --network public_net --no-dhcp \
+   --gateway 160.30.63.129 --subnet-range 160.30.63.128/27 \
+   --allocation-pool start=160.30.63.130,end=160.30.63.158 \
+   public_subnet
+
+
+openstack network create --internal int_net
+
+openstack subnet create --network int_net --dns-nameserver 8.8.8.8 \
+   --subnet-range 192.168.10.0/24 \
+   --allocation-pool start=192.168.10.10,end=192.168.10.199 \
+   int_subnet
+
+
+openstack network create --internal int_net_pub
+openstack subnet create --network int_net_pub --dns-nameserver 8.8.8.8 \
+   --subnet-range 192.168.20.0/24 \
+   --allocation-pool start=192.168.20.10,end=192.168.20.199 \
+   int_subnet_pub
+
+
+
+
+
+openstack router create router_ext
+openstack router add subnet router_ext  int_subnet
+openstack router set router_ext --external-gateway ext_net
+
+
+
+openstack router create router_public
+openstack router add subnet router_public  int_subnet_pub
+openstack router set router_public --external-gateway public_net
+
+
+--------------------
+mkdir ~/cloud-keys
+
+ssh-keygen -q -N '' -f ~/cloud-keys/adminkey
+
+openstack keypair create --public-key ~/cloud-keys/adminkey.pub adminkey
+openstack keypair create --public-key /home/ze/.ssh/id_ed25519.pub r630key
+
+---------------------------
+
+openstack security group create --description 'Allow SSH' Allow_SSH
+openstack security group rule create --proto tcp --dst-port 22 Allow_SSH
+openstack security group rule create --proto icmp  Allow_SSH
+
+for i in $(openstack security group list | awk '/default/{ print $2 }'); do
+   openstack security group rule create $i --protocol tcp --remote-ip 0.0.0.0/0 --dst-port 22;
+done
+
+mkdir ~/cloud-images
+
+wget http://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img \
+   -O ~/cloud-images/jammy-amd64.img
+
+wget http://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img    \
+   -O ~/cloud-images/noble-amd64.img
+ 
+
+openstack image create --public --container-format bare \
+   --disk-format qcow2 --file ~/cloud-images/jammy-amd64.img \
+   jammy-amd64
+
+openstack image create --public --container-format bare \
+   --disk-format qcow2 --file ~/cloud-images/noble-amd64.img \
+   noble-amd64
+
+
+openstack flavor create --ram 12048 --disk 60 --vcpus 12 m2.large
+openstack flavor create --ram 8048 --disk 10 --vcpus 8 m2.small
+
+
+openstack quota set --instances 100 --cores 200 --ram 512000 --volumes 50 --gigabytes 1000    52e319eeafd4442e880a2454d5ec06ae
+
+openstack server create --image jammy-amd64 --flavor m2.large \
+   --key-name adminkey --network int_net --security-group Allow_SSH \
+   jammy-1
+
+openstack server create --flavor m2.large \
+   --key-name adminkey --network int_net \
+   --security-group Allow_SSH --boot-from-volume 20 \
+   --image jammy-amd64 jammy-5
+   
+openstack server list
+
+FLOATING_IP=$(openstack floating ip create -f value -c floating_ip_address ext_net)
+openstack server add floating ip jammy-5 $FLOATING_IP
+ 
+
+ 
+
+ 
+ ssh -i ~/cloud-keys/adminkey ubuntu@14.14.198.253
+
+chmod 600 /home/ze/cloud-keys/adminkey
+
+
+ openstack server create --flavor m2.large \
+   --key-name adminkey --network int_net \
+   --security-group Allow_SSH --boot-from-volume 10 \
+   --image jammy-amd64 jammy-4
+ 
+FLOATING_IP=$(openstack floating ip create -f value -c floating_ip_address ext_net)
+openstack server add floating ip jammy-4 $FLOATING_IP

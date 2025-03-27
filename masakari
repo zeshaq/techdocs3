@@ -1,0 +1,48 @@
+
+juju deploy masakari --channel zed/stable
+juju deploy masakari-monitors --channel 2024.1/stable
+
+
+
+juju deploy --channel 8.0/stable mysql-router masakari-mysql-router
+juju integrate masakari-mysql-router:db-router mysql-innodb-cluster:db-router
+juju integrate masakari-mysql-router:shared-db masakari:shared-db
+
+
+
+juju integrate nova-compute masakari-monitors
+juju integrate keystone masakari-monitors
+juju integrate keystone masakari
+juju integrate rabbitmq-server:amqp masakari:amqp
+
+
+
+
+
+openstack segment create S2 auto COMPUTE
+
+openstack segment host create nova-compute1.maas COMPUTE SSH S2
+openstack segment host create nova-compute2.maas COMPUTE SSH S2
+openstack segment host create nova-compute3.maas COMPUTE SSH S2
+
+
+openstack server set --property HA_Enabled=True inst1
+
+
+
+openstack compute service list -c Host -c Status -c State --service nova-compute
+openstack server show inst1 -c OS-EXT-SRV-ATTR:host
+
+
+juju exec --unit nova-compute/2 sudo ip link set br-ens3 down
+
+
+openstack server show inst1 -c OS-EXT-SRV-ATTR:host -c OS-EXT-SRV-ATTR:instance_name
+
+
+juju exec --unit nova-compute/2 'pgrep -f guest=instance-00000001'
+juju exec --unit nova-compute/2 'sudo pkill -f -9 guest=instance-00000001'
+juju exec --unit nova-compute/2 'pgrep -f guest=instance-00000001'
+
+
+openstack server show inst1 -c OS-EXT-SRV-ATTR:host -c OS-EXT-SRV-ATTR:instance_name

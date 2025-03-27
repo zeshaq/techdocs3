@@ -1,0 +1,4 @@
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.5/stable
+sudo maas init region+rack --maas-url http://14.14.0.2:5240/MAAS --database-uri maas-test-db:///
+sudo maas createadmin --username ze --password ze --email ze@ze.com

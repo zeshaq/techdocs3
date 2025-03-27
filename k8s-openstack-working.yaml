@@ -1,0 +1,120 @@
+default-base: ubuntu@22.04/stable
+applications:
+  cinder-csi:
+    charm: cinder-csi
+    channel: latest/stable
+    revision: 28
+  easyrsa:
+    charm: easyrsa
+    channel: latest/stable
+    revision: 68
+    resources:
+      easyrsa: 2
+    num_units: 1
+    to:
+    - "0"
+    constraints: arch=amd64 cpu-cores=1 mem=4096 root-disk=16384
+  etcd:
+    charm: etcd
+    channel: latest/stable
+    revision: 781
+    resources:
+      core: 0
+      etcd: 3
+      snapshot: 0
+    num_units: 3
+    to:
+    - "1"
+    - "2"
+    - "3"
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=40960
+    storage:
+      data: loop,1024M
+  k8s:
+    charm: k8s
+    channel: latest/edge
+    revision: 654
+    resources:
+      snap-installation: 2
+    num_units: 3
+    to:
+    - "4"
+    - "5"
+    - "6"
+    options:
+      bootstrap-datastore: etcd
+      bootstrap-node-taints: node-role.kubernetes.io/control-plane:NoSchedule
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  k8s-worker:
+    charm: k8s-worker
+    channel: latest/edge
+    revision: 649
+    resources:
+      snap-installation: 6
+    num_units: 3
+    to:
+    - "7"
+    - "8"
+    - "9"
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  openstack-cloud-controller:
+    charm: openstack-cloud-controller
+    channel: latest/stable
+    revision: 24
+  openstack-integrator:
+    charm: openstack-integrator
+    channel: latest/stable
+    revision: 96
+    resources:
+      openstackclients: 1
+    num_units: 1
+    to:
+    - "10"
+    constraints: arch=amd64
+    trust: true
+machines:
+  "0":
+    constraints: arch=amd64 cpu-cores=1 mem=4096 root-disk=16384
+  "1":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=40960
+  "2":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=40960
+  "3":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=40960
+  "4":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "5":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "6":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "7":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "8":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "9":
+    constraints: arch=amd64 cpu-cores=2 mem=8192 root-disk=32768
+  "10":
+    constraints: arch=amd64
+relations:
+- - openstack-cloud-controller:kube-control
+  - k8s:kube-control
+- - cinder-csi:kube-control
+  - k8s:kube-control
+- - openstack-cloud-controller:external-cloud-provider
+  - k8s:external-cloud-provider
+- - openstack-cloud-controller:openstack
+  - openstack-integrator:clients
+- - cinder-csi:openstack
+  - openstack-integrator:clients
+- - k8s:external-load-balancer
+  - openstack-integrator:lb-consumers
+- - easyrsa:client
+  - etcd:certificates
+- - k8s:etcd
+  - etcd:db
+- - k8s:k8s-cluster
+  - k8s-worker:cluster
+- - k8s:containerd
+  - k8s-worker:containerd
+- - k8s:cos-worker-tokens
+  - k8s-worker:cos-tokens

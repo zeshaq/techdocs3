@@ -1,0 +1,40 @@
+
+GSLB 
+Gitlab
+Rancher Prime 
+Cisco Secure workload/endpoint 
+coslite 
+veeam/kasten /velero 
+harbor 
+neuvector 
+OKD 
+jenkins
+terraform 
+
+CI/CD full pipeline 
+Argocd
+Istio
+Fleet 
+
+isCsi Storage 
+openstack multiple storage backend 
+
+
+deploy web app to check with octavia 
+magnum 
+heat 
+watcher 
+designate 
+swift - check with multiple s3 backend 
+minio, 
+kafka 
+
+juju deploy charmed kubernetes on openstack
+juju deploy microk8s on openstack
+
+
+vm migration from vmware 
+platform9 vjailbreak
+hardening 
+
+k8s with cinder volume

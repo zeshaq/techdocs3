@@ -1,0 +1,75 @@
+
+
+sudo cp /home/ze/snap/openstackclients/common/root-ca.crt  /home/ze/root-ca.crt
+sudo chown $(whoami):$(whoami) /home/ze/root-ca.crt
+sudo cp /home/ze/root-ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates
+
+
+
+juju add-cloud 
+juju autoload-credentials
+
+
+
+
+juju bootstrap --debug \
+    --config network=int_net\
+    --config external-network=ext_net \
+    --config use-default-secgroup=true \
+    --bootstrap-series=jammy \
+    --bootstrap-constraints instance-type=juju-controller \
+    openstack-cloud openstack-cloud-controller40
+
+
+juju bootstrap --debug \
+    --config network=int_net \
+    --config external-network=ext_net \
+    --bootstrap-series=jammy \
+    --bootstrap-constraints 'instance-type=juju-controller allocate-public-ip=True ' \
+    openstack-cloud openstack-cloud-controller
+
+
+juju bootstrap   openstack-cloud openstack-cloud-controller --debug \
+    --config network=int_net \
+    --config external-network=ext_net \
+    --config use-default-secgroup=true \
+    --bootstrap-series=jammy \
+    --bootstrap-constraints "instance-type=juju-controller allocate-public-ip=true root-disk=20G root-disk-source=volume" 
+ 
+
+
+juju bootstrap   openstack-cloud openstack-cloud-controller --debug \
+    --config network=int_net \
+    --config external-network=ext_net \
+    --config use-default-secgroup=true \
+    --bootstrap-series=jammy \
+    --bootstrap-constraints "instance-type=juju-controller allocate-public-ip=true root-disk=20G " 
+ 
+
+
+
+https://14.14.191.37:5000/v3
+
+juju metadata generate-image -d ~/simplestreams -i c73b54c1-9b65-4e32-b81a-3dd0bcb8e5c6 --base ubuntu@22.04 -r RegionOne -u https://14.14.0.15:5000/v3
+
+
+juju bootstrap --debug \
+    --config network=int_net \
+    --config external-network=ext_net \
+    --config use-default-secgroup=true \
+    --bootstrap-base=ubuntu@22.04 \
+    --bootstrap-constraints instance-type=juju-controller \
+    openstack-cloud openstack-cloud-controller6
+
+
+
+
+
+    juju bootstrap --debug \
+    --bootstrap-base=ubuntu@22.04 \
+    --bootstrap-constraints instance-type=juju-controller \
+    openstack-cloud openstack-cloud-controller
+
+
+ 

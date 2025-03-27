@@ -1,0 +1,21 @@
+openstack network create --internal int_net_user
+
+openstack subnet create --network int_net_user --dns-nameserver 8.8.8.8 \
+   --subnet-range 192.168.10.0/24 \
+   --allocation-pool start=192.168.10.10,end=192.168.10.199 \
+   int_subnet_user
+
+
+
+   openstack router create router_ext_user
+openstack router add subnet router_ext_user  int_subnet_user
+openstack router set router_ext_user --external-gateway ext_net
+
+
+
+juju bootstrap   openstack-cloud-user openstack-cloud-controller-user --debug \
+    --config network=int_net_user \
+    --config external-network=ext_net \
+    --config use-default-secgroup=true \
+    --bootstrap-series=jammy \
+    --bootstrap-constraints "instance-type=juju-controller allocate-public-ip=true root-disk=20G " 
