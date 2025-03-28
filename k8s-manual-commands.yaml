@@ -1,23 +1,15 @@
-juju deploy k8s --channel=1.32/stable --constraints='cores=2 mem=15G root-disk=40G'
-juju deploy k8s-worker --channel=1.32/stable --constraints='cores=2 mem=16G root-disk=40G'
+juju deploy k8s --channel=1.32/stable 
+juju deploy k8s-worker --channel=1.32/stable 
 juju integrate k8s k8s-worker:cluster
 juju integrate k8s k8s-worker:containerd
 juju integrate k8s k8s-worker:cos-tokens
 
 
 
+juju config k8s local-storage-enabled=true
+ juju config k8s load-balancer-enabled=true
+
+ juju config k8s load-balancer-cidrs=14.14.90.0/24
 
 
 
-
-   juju integrate openstack-cloud-controller:kube-control             k8s:kube-control  
-   juju integrate cinder-csi:kube-control                             k8s:kube-control  
-   juju integrate openstack-cloud-controller:external-cloud-provider  k8s:external-cloud-provider  
-   juju integrate openstack-cloud-controller:openstack                openstack-integrator:clients  
-   juju integrate cinder-csi:openstack                                openstack-integrator:clients  
-   juju integrate k8s:external-load-balancer                          openstack-integrator:lb-consumers  
-   juju integrate easyrsa:client  etcd:certificates    
-   juju integrate k8s:etcd  etcd:db    
-   juju integrate k8s:k8s-cluster  k8s-worker:cluster  
-   juju integrate k8s:containerd  k8s-worker:containerd  
-   juju integrate k8s:cos-worker-tokens  k8s-worker:cos-tokens  
