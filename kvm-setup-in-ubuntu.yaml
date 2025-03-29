@@ -1,1 +1,153 @@
 sudo apt install qemu-kvm virt-manager virtinst libvirt-clients bridge-utils libvirt-daemon-system -y
+
+sudo snap install maas-test-db
+sudo snap install maas --channel=3.5/stable
+sudo maas init region+rack --maas-url http://12.12.0.3:5240/MAAS --database-uri maas-test-db:///
+sudo maas createadmin --username ze --password ze --email ze@ze.com
+
+sudo maas createadmin --username ze --password ze --email ze@ze.com --ssh-import gh:zeshaq
+sudo maas createadmin --username ze --password ze --email ze@ze.com --ssh-import cat /home/ze/.ssh/id_rsa.pub
+
+
+cat <<EOF > jujusetup.yaml
+clouds:
+  maas-one:
+    type: maas
+    auth-types: [oauth1]
+    endpoint: http://15.15.0.2:5240/MAAS
+
+credentials:
+  maas-one:
+    anyuser:
+      auth-type: oauth1
+      maas-oauth: suQ5t4HDsZw73Eyyw6:jWVxeSrGsAccWkXLpn:mVHCc7yBsxQmTDE3gGBs5uj4V4tL3UPH
+EOF
+
+
+juju add-cloud --client -f jujusetup.yaml maas-one
+juju add-credential --client -f jujusetup.yaml maas-one
+juju bootstrap --bootstrap-series=jammy --constraints tags=juju maas-one maas-controller
+ 
+juju add-model --config default-series=jammy openstack
+juju switch maas-controller:openstack
+
+-------------------------
+
+
+network:
+  version: 2
+  renderer: networkd
+
+  ethernets:
+    ens15f0:
+      dhcp4: true
+    ens15f1:
+      dhcp4: false
+
+  bridges:
+    br0:
+      interfaces: [ens15f1]
+      addresses: [12.12.0.10/16]
+      # gateway4 is deprecated, use routes instead
+      routes:
+      - to: default
+        via: 12.12.0.1
+        metric: 100
+        on-link: true
+      mtu: 1500
+      nameservers:
+        addresses: [8.8.8.8]
+      parameters:
+        stp: true
+        forward-delay: 4
+      dhcp4: no
+      dhcp6: no
+
+
+-------------------------------------
+sudo apt update & sudo apt upgrade -y
+
+sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager  -y
+sudo apt install qemu-kvm libvirt-daemon-system  libvirt-clients bridge-utils virt-manager 
+sudo adduser $USER kvm
+sudo usermod -aG libvirt $USER
+
+sudo systemctl start libvirtd
+sudo systemctl enable --now libvirtd
+
+
+
+--------------
+
+cat <<EOF > bridge-12.xml
+<network>
+  <name>bridge-12</name>
+  <forward mode="bridge"/>
+  <bridge name="br12"/>
+</network>
+
+EOF
+
+virsh net-define bridge-12.xml
+virsh net-start bridge-12
+virsh net-autostart bridge-12
+
+
+
+
+
+cat <<EOF > host-bridge11.xml
+<network>
+  <name>host-bridge11</name>
+  <forward mode="bridge"/>
+  <bridge name="br11"/>
+</network>
+
+EOF
+
+virsh net-define host-bridge11.xml
+virsh net-start host-bridge11
+virsh net-autostart host-bridge11
+
+sudo nano  /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+network: {config: disabled}
+
+
+
+
+
+
+cat <<EOF > real-bridge.xml
+<network>
+  <name>real-bridge</name>
+  <forward mode="bridge"/>
+  <bridge name="br-real"/>
+</network>
+
+EOF
+
+virsh net-define real-bridge.xml
+virsh net-start real-bridge
+virsh net-autostart real-bridge
+
+
+----------------------
+sudo nano  /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+network: {config: disabled}
+
+
+
+network:
+    ethernets:
+      enp1s0:
+        dhcp4: false
+        addresses: [103.108.62.219/29]
+        nameservers: 
+         addresses: [8.8.8.8]
+        routes: 
+        - to: default
+          via: 103.108.62.217
+    version: 2
+
+
+
