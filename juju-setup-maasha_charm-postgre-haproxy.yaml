@@ -1,1 +1,43 @@
 
+sudo snap install juju
+
+
+
+juju add-cloud maas-bootstrap ./maas-bootstrap.yaml
+juju bootstrap maas-bootstrap maas-controller
+
+juju add-machine -m controller ssh:ze@12.12.10.62
+juju add-machine -m controller ssh:ze@12.12.10.63
+juju add-machine -m controller ssh:ze@12.12.10.64
+juju enable-ha -n 3 --to 1,2
+juju controllers --refresh
+
+
+juju deploy -m controller postgresql --channel 14/stable --series jammy --to 0
+juju add-unit -m controller postgresql -n 2 --to 1,2
+
+
+
+juju deploy -m controller haproxy --series jammy --to 0
+juju add-unit -m controller haproxy -n 2 --to 1,2
+
+
+    juju deploy -m controller maas-region --channel edge --to 0
+    juju status --watch 10s 
+
+  juju integrate -m controller maas-region postgresql
+    juju integrate -m controller maas-region haproxy
+
+
+
+    juju run -m controller maas-region/leader create-admin username=ze password=ze email=maas@example.com ssh-import=gh:zeshaq
+
+
+    juju deploy -m controller maas-agent --channel edge --to 1
+
+    juju integrate -m controller maas-agent maas-region
+
+    juju add-unit -m controller maas-agent --to 2
+
+
+    juju run -m controller maas-region/leader get-api-endpoint
